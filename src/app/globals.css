@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a0a0b;
+  --surface: #121214;
+  --elevated: #1a1a1d;
+  --foreground: #ffffff;
+  --hairline: rgba(255, 255, 255, 0.08);
+  --hairline-active: rgba(255, 255, 255, 0.2);
+  --ease-camera: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-elevated: var(--elevated);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+}
+
+html,
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+@keyframes flash {
+  0% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes scanLine {
+  0%,
+  100% {
+    top: 14px;
+  }
+  50% {
+    top: calc(100% - 15px);
+  }
+}
