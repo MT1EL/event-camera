@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { headers } from "next/headers";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import QRCode from "qrcode";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getEventBySlug } from "@/lib/queries/events";
 import { getEventPhotos, publicPhotoUrl } from "@/lib/queries/photos";
 import ManageActions from "./manage-actions";
 import ManageRealtimeRefresher from "./realtime-refresher";
+import EventSettingsSheet from "./event-settings-sheet";
 
 const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
 
@@ -30,6 +32,15 @@ export default async function ManageEventPage({
   const { id } = await params;
   const event = await getEventBySlug(id);
   if (!event) notFound();
+
+  // Owner-only: anyone else gets bounced to the public event landing.
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || event.owner_id !== user.id) {
+    redirect(`/event/${encodeURIComponent(event.slug)}`);
+  }
 
   const photos = await getEventPhotos(event.id);
   const { absolute, display } = await buildGuestUrl(event.slug);
@@ -76,7 +87,18 @@ export default async function ManageEventPage({
           <span className="text-[10px] font-medium uppercase tracking-[0.32em] text-white/45">
             Organizer
           </span>
-          <span className="w-11" aria-hidden />
+          <EventSettingsSheet
+            event={{
+              id: event.id,
+              slug: event.slug,
+              name: event.name,
+              end_at: event.end_at,
+              reveal_mode: event.reveal_mode,
+              reveal_at: event.reveal_at,
+              shots_per_person: event.shots_per_person,
+              visibility: event.visibility,
+            }}
+          />
         </div>
 
         <div className="mt-8">
