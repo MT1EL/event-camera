@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useState } from "react";
+import Spinner from "@/components/Spinner";
+import { savePhotosToDevice } from "@/lib/save-photos";
 import QRSheet from "./qr-sheet";
 
 const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
@@ -10,24 +12,40 @@ const FEEDBACK_MS = 1400;
 export default function ManageActions({
   eventId,
   eventName,
+  photoUrls,
   absolute,
   display,
   qrSvg,
 }: {
   eventId: string;
   eventName: string;
+  photoUrls: string[];
   absolute: string;
   display: string;
   qrSvg: string;
 }) {
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const handleDownload = useCallback(() => {
-    if (saved) return;
-    // Phase 2: trigger ZIP download from the backend. Prototype: visual feedback.
-    setSaved(true);
-    window.setTimeout(() => setSaved(false), FEEDBACK_MS);
-  }, [saved]);
+  const handleDownload = useCallback(async () => {
+    if (saving || photoUrls.length === 0) return;
+    setSaving(true);
+    try {
+      const result = await savePhotosToDevice(
+        photoUrls.map((url, i) => ({
+          url,
+          name: `${eventId}-${String(i + 1).padStart(4, "0")}`,
+        })),
+        eventName,
+      );
+      setSaving(false);
+      if (result === "cancelled") return;
+      setSaved(true);
+      window.setTimeout(() => setSaved(false), FEEDBACK_MS);
+    } catch {
+      setSaving(false);
+    }
+  }, [saving, photoUrls, eventId, eventName]);
 
   return (
     <div className="flex gap-3">
@@ -47,8 +65,11 @@ export default function ManageActions({
       <button
         type="button"
         onClick={handleDownload}
-        aria-label={saved ? "Saved" : "Save photos"}
-        className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.06] text-[14px] font-medium tracking-tight text-white backdrop-blur-md transition active:opacity-75"
+        disabled={saving || photoUrls.length === 0}
+        aria-label={
+          saving ? "Saving photos" : saved ? "Saved" : "Save all photos"
+        }
+        className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.06] text-[14px] font-medium tracking-tight text-white backdrop-blur-md transition active:opacity-75 disabled:opacity-40"
         style={{
           borderWidth: "0.5px",
           transitionDuration: "200ms",
@@ -56,7 +77,7 @@ export default function ManageActions({
           WebkitBackdropFilter: "blur(12px)",
         }}
       >
-        {saved ? <CheckIcon /> : <DownloadIcon />}
+        {saving ? <Spinner /> : saved ? <CheckIcon /> : <DownloadIcon />}
       </button>
 
       <QRSheet

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
-import { mockColor } from "@/lib/mock-events";
+import { avatarColor } from "@/lib/avatar-color";
+import { savePhotosToDevice } from "@/lib/save-photos";
 import ParticipantsSheet from "./participants-sheet";
 import CheckIcon from "@/components/icons/CheckIcon";
 import SendIcon from "@/components/icons/SendIcon";
@@ -63,7 +64,7 @@ export default function AlbumView({
       map.set(p.participant, (map.get(p.participant) ?? 0) + 1);
     }
     return Array.from(map.entries())
-      .map(([name, count]) => ({ name, count, color: mockColor(name, 0) }))
+      .map(([name, count]) => ({ name, count, color: avatarColor(name) }))
       .sort((a, b) =>
         b.count !== a.count ? b.count - a.count : a.name.localeCompare(b.name),
       );
@@ -126,7 +127,9 @@ export default function AlbumView({
 
   const toggleAll = useCallback(() => {
     setSelected((prev) =>
-      prev.size === photos.length ? new Set() : new Set(photos.map((p) => p.id)),
+      prev.size === photos.length
+        ? new Set()
+        : new Set(photos.map((p) => p.id)),
     );
   }, [photos]);
 
@@ -137,46 +140,17 @@ export default function AlbumView({
     setSaveError(null);
 
     try {
-      const files = await Promise.all(
-        chosen.map(async (p) => {
-          const res = await fetch(p.src);
-          if (!res.ok) throw new Error("fetch failed");
-          const blob = await res.blob();
-          const ext = blob.type.includes("png") ? "png" : "jpg";
-          const name = `${album.slug}-${String(p.index).padStart(4, "0")}.${ext}`;
-          return new File([blob], name, { type: blob.type || "image/jpeg" });
-        }),
+      const result = await savePhotosToDevice(
+        chosen.map((p) => ({
+          url: p.src,
+          name: `${album.slug}-${String(p.index).padStart(4, "0")}`,
+        })),
+        album.name,
       );
 
-      // Mobile (iOS/Android) is the only place the native share sheet can reach
-      // the camera roll. Everywhere else, download directly like "Save As" —
-      // desktop browsers also report canShare({files})=true, so we must not
-      // route them through the share sheet.
-      const ua = navigator.userAgent;
-      const isMobile =
-        /Android|iPhone|iPod|iPad/i.test(ua) ||
-        (navigator.platform === "MacIntel" && (navigator.maxTouchPoints ?? 0) > 1);
-
-      const canShareFiles =
-        isMobile &&
-        typeof navigator.canShare === "function" &&
-        navigator.canShare({ files });
-
-      if (canShareFiles) {
-        try {
-          await navigator.share({ files, title: album.name });
-        } catch {
-          setSaving(false);
-          return; // user cancelled
-        }
-      } else {
-        for (const file of files) {
-          downloadFile(file);
-          await new Promise((r) => window.setTimeout(r, 200));
-        }
-      }
-
       setSaving(false);
+      if (result === "cancelled") return;
+
       setSelecting(false);
       setSelected(new Set());
       setSaved("done");
@@ -291,7 +265,7 @@ export default function AlbumView({
           <div className="mt-6 flex gap-3">
             <ActionButton
               variant="primary"
-              label={sent === "done" ? "Sent" : "Send"}
+              label={sent === "done" ? "Shared" : "Share"}
               icon={sent === "done" ? <CheckIcon /> : <SendIcon />}
               onClick={handleSend}
             />
@@ -339,20 +313,6 @@ export default function AlbumView({
       />
     </main>
   );
-}
-
-/** Triggers a browser download for a single file (the desktop "Save As" path). */
-function downloadFile(file: File) {
-  const url = URL.createObjectURL(file);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = file.name;
-  a.rel = "noopener";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  // Revoke later so the download isn't cancelled before it starts.
-  window.setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
 function PhotoCell({

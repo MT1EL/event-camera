@@ -51,7 +51,6 @@ export default async function ManageEventPage({
     margin: 0,
     color: { dark: "#0a0a0b", light: "#ffffff" },
   });
-  console.log(event);
 
   return (
     <main
@@ -134,6 +133,7 @@ export default async function ManageEventPage({
             <ManageActions
               eventId={event.slug}
               eventName={event.name}
+              photoUrls={photos.map((p) => publicPhotoUrl(p.storage_path))}
               absolute={absolute}
               display={display}
               qrSvg={qrSvg}

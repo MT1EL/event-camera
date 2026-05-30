@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { mockColor } from "@/lib/mock-events";
+import { publicPhotoUrl } from "@/lib/photo-url";
 
 const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
 
@@ -11,6 +11,7 @@ type DashEvent = {
   name: string;
   end_at: string;
   photo_count: number;
+  previews: string[];
 };
 
 async function getDashboardEvents(): Promise<{
@@ -29,7 +30,7 @@ async function getDashboardEvents(): Promise<{
     .eq("owner_id", user.id)
     .order("created_at", { ascending: false });
 
-  const events = (data ?? []).map((e) => {
+  const base = (data ?? []).map((e) => {
     const rawCount = e.photos as unknown as { count: number }[] | undefined;
     return {
       id: e.id as string,
@@ -39,6 +40,31 @@ async function getDashboardEvents(): Promise<{
       photo_count: rawCount?.[0]?.count ?? 0,
     };
   });
+
+  // Pull a few recent thumbnails per event for the cards (bounded fetch).
+  const previewsByEvent = new Map<string, string[]>();
+  const ids = base.map((e) => e.id);
+  if (ids.length > 0) {
+    const { data: photoRows } = await supabase
+      .from("photos")
+      .select("event_id, storage_path, created_at")
+      .in("event_id", ids)
+      .order("created_at", { ascending: false })
+      .limit(150);
+    for (const row of photoRows ?? []) {
+      const eid = row.event_id as string;
+      const list = previewsByEvent.get(eid) ?? [];
+      if (list.length < 5) {
+        list.push(publicPhotoUrl(row.storage_path as string));
+        previewsByEvent.set(eid, list);
+      }
+    }
+  }
+
+  const events: DashEvent[] = base.map((e) => ({
+    ...e,
+    previews: previewsByEvent.get(e.id) ?? [],
+  }));
 
   const now = new Date().toISOString();
   return {
@@ -305,7 +331,13 @@ function ActiveCard({ event }: { event: DashEvent }) {
       </p>
 
       <div className="mt-4 flex items-center justify-between">
-        <FilmStrip slug={event.slug} count={5} />
+        {event.previews.length > 0 ? (
+          <FilmStrip previews={event.previews} />
+        ) : (
+          <span className="text-[10px] font-medium uppercase tracking-[0.24em] text-white/30">
+            Awaiting photos
+          </span>
+        )}
         <Chevron />
       </div>
     </Link>
@@ -366,12 +398,31 @@ function AlbumRow({ album }: { album: DashEvent }) {
     >
       <div
         aria-hidden
-        className="h-12 w-12 shrink-0 overflow-hidden rounded-[10px] border border-white/[0.06]"
+        className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-white/[0.06] bg-[#1a1a1d] bg-cover bg-center"
         style={{
-          backgroundColor: mockColor(album.slug, 0),
+          backgroundImage: album.previews[0]
+            ? `url(${album.previews[0]})`
+            : undefined,
           borderWidth: "0.5px",
         }}
-      />
+      >
+        {!album.previews[0] && (
+          <svg
+            viewBox="0 0 24 24"
+            className="h-4 w-4 text-white/30"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <rect x="4" y="6" width="16" height="12" rx="2" />
+            <circle cx="12" cy="12.5" r="2.5" />
+            <path d="M9 6l1-1.5h4L15 6" />
+          </svg>
+        )}
+      </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-[15px] font-semibold tracking-tight text-white">
           {album.name}
@@ -386,15 +437,15 @@ function AlbumRow({ album }: { album: DashEvent }) {
   );
 }
 
-function FilmStrip({ slug, count }: { slug: string; count: number }) {
+function FilmStrip({ previews }: { previews: string[] }) {
   return (
     <div aria-hidden className="flex gap-1">
-      {Array.from({ length: count }).map((_, i) => (
+      {previews.slice(0, 5).map((url, i) => (
         <span
           key={i}
-          className="block h-7 w-7 rounded-[5px] border border-white/[0.06]"
+          className="block h-7 w-7 rounded-[5px] border border-white/[0.06] bg-cover bg-center"
           style={{
-            backgroundColor: mockColor(slug, i),
+            backgroundImage: `url(${url})`,
             borderWidth: "0.5px",
           }}
         />
