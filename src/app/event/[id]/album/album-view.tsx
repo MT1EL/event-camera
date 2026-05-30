@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { mockColor } from "@/lib/mock-events";
 import ParticipantsSheet from "./participants-sheet";
+import CheckIcon from "@/components/icons/CheckIcon";
+import SendIcon from "@/components/icons/SendIcon";
+import SaveIcon from "@/components/icons/SaveIcon";
 
 const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
 const FEEDBACK_MS = 1600;
@@ -342,59 +345,5 @@ function SecondaryAction({
       <span className="flex h-4 w-4 items-center justify-center">{icon}</span>
       <span>{state === "done" ? doneLabel : label}</span>
     </button>
-  );
-}
-
-function SendIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className="h-4 w-4"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M22 2L11 13" />
-      <path d="M22 2l-7 20-4-9-9-4 20-7z" />
-    </svg>
-  );
-}
-
-function SaveIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className="h-4 w-4"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M12 4v12" />
-      <path d="M6 11l6 6 6-6" />
-      <path d="M5 20h14" />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className="h-4 w-4"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M5 12l5 5 9-11" />
-    </svg>
   );
 }

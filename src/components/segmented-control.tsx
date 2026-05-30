@@ -1,6 +1,6 @@
 "use client";
 
-const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
+import { EASE } from "@/lib/ui";
 
 export default function SegmentedControl<T extends string>({
   options,

@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getEventBySlug } from "@/lib/queries/events";
+import GuestEntry from "./guest-entry";
 
 export default async function EventLandingPage({
   params,
@@ -71,29 +71,7 @@ export default async function EventLandingPage({
         </div>
       </section>
 
-      <div className="w-full max-w-sm self-center px-5 pb-8">
-        <Link
-          href={`/event/${encodeURIComponent(event.slug)}/camera`}
-          className="flex h-14 w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-base font-medium tracking-tight text-white transition-opacity active:opacity-80"
-          style={{
-            borderWidth: "0.5px",
-            transitionDuration: "200ms",
-            transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
-            WebkitBackdropFilter: "blur(12px)",
-          }}
-        >
-          <span className="flex items-center gap-2.5">
-            <span
-              aria-hidden
-              className="inline-block h-2 w-2 rounded-full bg-white/90"
-            />
-            Enter Camera
-          </span>
-        </Link>
-        <p className="mt-4 text-center text-[11px] uppercase tracking-[0.24em] text-white/30">
-          Tap to start shooting
-        </p>
-      </div>
+      <GuestEntry eventSlug={event.slug} />
     </main>
   );
 }
