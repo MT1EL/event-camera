@@ -143,13 +143,14 @@ export default async function ManageEventPage({
       </header>
 
       <section className="mt-8 px-5 pb-10">
-        {event.reveal_mode !== "live" && (
-          <CountdownTimer
-            targetDate={
-              event.reveal_mode === "end" ? event.end_at : event.reveal_at
-            }
-          />
-        )}
+        {event.reveal_mode !== "live" &&
+          (event.reveal_mode === "end" ? event.end_at : event.reveal_at) && (
+            <CountdownTimer
+              targetDate={
+                event.reveal_mode === "end" ? event.end_at! : event.reveal_at!
+              }
+            />
+          )}
         {photos.length === 0 ? (
           <EmptyGrid />
         ) : (

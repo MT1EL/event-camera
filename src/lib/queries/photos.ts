@@ -1,7 +1,9 @@
 import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { STORAGE_BUCKET, type PhotoRow } from "@/lib/supabase/types";
+import type { PhotoRow } from "@/lib/supabase/types";
+
+export { publicPhotoUrl } from "@/lib/photo-url";
 
 export async function getEventPhotos(eventId: string): Promise<PhotoRow[]> {
   const supabase = await createSupabaseServerClient();
@@ -11,12 +13,6 @@ export async function getEventPhotos(eventId: string): Promise<PhotoRow[]> {
     .eq("event_id", eventId)
     .order("created_at", { ascending: false });
   return (data ?? []) as PhotoRow[];
-}
-
-export function publicPhotoUrl(storagePath: string): string {
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!base) return "";
-  return `${base}/storage/v1/object/public/${STORAGE_BUCKET}/${storagePath}`;
 }
 
 export function tallyParticipants(

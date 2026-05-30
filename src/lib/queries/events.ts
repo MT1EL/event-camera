@@ -3,6 +3,11 @@ import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { EventRow } from "@/lib/supabase/types";
 
+/** Whether the event's end time has passed — uploads are closed once true. */
+export function isEventEnded(endAt: string): boolean {
+  return new Date(endAt).getTime() <= Date.now();
+}
+
 export async function getEventBySlug(slug: string): Promise<EventRow | null> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase

@@ -12,6 +12,7 @@ import { usePhotos } from "../event-state";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getOrCreateGuestSession } from "@/lib/guest-session";
 import { STORAGE_BUCKET } from "@/lib/supabase/types";
+import EventEnded from "./event-ended";
 
 const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
 const SHRINK_MS = 320;
@@ -36,11 +37,13 @@ export default function CameraScreen({
   eventDbId,
   eventSlug,
   eventName,
+  endAt,
   shotsPerPerson,
 }: {
   eventDbId: string;
   eventSlug: string;
   eventName: string;
+  endAt: string;
   shotsPerPerson: number | null;
 }) {
   const { photos, addPhoto } = usePhotos();
@@ -53,6 +56,9 @@ export default function CameraScreen({
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [myCount, setMyCount] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [ended, setEnded] = useState(
+    () => Date.now() >= new Date(endAt).getTime(),
+  );
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -166,6 +172,21 @@ export default function CameraScreen({
     };
   }, [facing, retrySeq]);
 
+  // Close the camera the moment the event's end time passes mid-session.
+  useEffect(() => {
+    const remaining = new Date(endAt).getTime() - Date.now();
+    if (remaining <= 0) return; // already handled by initial state
+    const t = window.setTimeout(() => setEnded(true), remaining);
+    return () => window.clearTimeout(t);
+  }, [endAt]);
+
+  // Release the camera stream once the event has ended.
+  useEffect(() => {
+    if (!ended) return;
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+  }, [ended]);
+
   const uploadPhoto = useCallback(
     async (blob: Blob, photoId: string) => {
       const supabase = supabaseRef.current;
@@ -203,6 +224,7 @@ export default function CameraScreen({
   const handleCapture = useCallback(() => {
     const v = videoRef.current;
     if (!v || v.videoWidth === 0 || v.videoHeight === 0) return;
+    if (ended) return;
     if (shotsPerPerson !== null && myCount >= shotsPerPerson) return;
     if (!identity) return;
 
@@ -245,6 +267,7 @@ export default function CameraScreen({
     );
   }, [
     addPhoto,
+    ended,
     facing,
     identity,
     myCount,
@@ -268,7 +291,11 @@ export default function CameraScreen({
   const limitReached =
     shotsPerPerson !== null && myCount >= shotsPerPerson;
   const canCapture =
-    status === "ready" && !limitReached && identity !== null;
+    status === "ready" && !limitReached && identity !== null && !ended;
+
+  if (ended) {
+    return <EventEnded eventName={eventName} eventSlug={eventSlug} />;
+  }
   const counterCap =
     shotsPerPerson === null ? "∞" : String(shotsPerPerson);
 
