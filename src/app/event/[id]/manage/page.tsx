@@ -8,6 +8,7 @@ import { getEventPhotos, publicPhotoUrl } from "@/lib/queries/photos";
 import ManageActions from "./manage-actions";
 import ManageRealtimeRefresher from "./realtime-refresher";
 import EventSettingsSheet from "./event-settings-sheet";
+import CountdownTimer from "@/components/Countdown";
 
 const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
 
@@ -50,6 +51,7 @@ export default async function ManageEventPage({
     margin: 0,
     color: { dark: "#0a0a0b", light: "#ffffff" },
   });
+  console.log(event);
 
   return (
     <main
@@ -141,6 +143,13 @@ export default async function ManageEventPage({
       </header>
 
       <section className="mt-8 px-5 pb-10">
+        {event.reveal_mode !== "live" && (
+          <CountdownTimer
+            targetDate={
+              event.reveal_mode === "end" ? event.end_at : event.reveal_at
+            }
+          />
+        )}
         {photos.length === 0 ? (
           <EmptyGrid />
         ) : (
@@ -149,7 +158,12 @@ export default async function ManageEventPage({
               <div
                 key={p.id}
                 className="relative aspect-[2/3] overflow-hidden rounded-[16px] border border-white/[0.06]"
-                style={{ borderWidth: "0.5px" }}
+                style={{
+                  borderWidth: "0.5px",
+                  marginTop:
+                    event.reveal_mode !== "live" ? "1.5rem" : undefined,
+                  filter: event.reveal_mode !== "live" ? "blur(20px)" : "none",
+                }}
                 aria-label={`Photo by ${p.participant_name}`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
