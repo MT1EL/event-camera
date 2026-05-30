@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -12,6 +13,7 @@ import { usePhotos } from "../event-state";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getOrCreateGuestSession } from "@/lib/guest-session";
 import { STORAGE_BUCKET } from "@/lib/supabase/types";
+import ChevronIcon from "@/components/icons/ChevronIcon";
 import EventEnded from "./event-ended";
 
 const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
@@ -46,6 +48,7 @@ export default function CameraScreen({
   endAt: string;
   shotsPerPerson: number | null;
 }) {
+  const router = useRouter();
   const { photos, addPhoto } = usePhotos();
   const [flashSeq, setFlashSeq] = useState(0);
   const [shrinks, setShrinks] = useState<Shrink[]>([]);
@@ -283,6 +286,15 @@ export default function CameraScreen({
     setRetrySeq((n) => n + 1);
   }, []);
 
+  // Organizers return to manage, guests to the event landing — so the camera
+  // is never a dead end. Leaving unmounts this screen and stops the stream.
+  const handleExit = useCallback(() => {
+    const slug = encodeURIComponent(eventSlug);
+    router.push(
+      identity?.uploaderId ? `/event/${slug}/manage` : `/event/${slug}`,
+    );
+  }, [identity, eventSlug, router]);
+
   const removeShrink = useCallback((id: number) => {
     setShrinks((prev) => prev.filter((s) => s.id !== id));
   }, []);
@@ -322,7 +334,13 @@ export default function CameraScreen({
       <ViewfinderOverlay />
 
       <header className="relative z-10 flex items-center justify-between px-5 pt-4">
-        <div className="flex w-[88px] items-center gap-2">
+        <div className="flex w-[88px] items-center">
+          <ExitButton onClick={handleExit} />
+        </div>
+        <h1 className="truncate text-center text-[12px] font-medium tracking-tight text-white/80">
+          {eventName}
+        </h1>
+        <div className="flex w-[88px] items-center justify-end gap-2">
           <span className="relative inline-flex h-1.5 w-1.5">
             <span className="absolute inset-0 animate-ping rounded-full bg-white/40" />
             <span className="relative inline-block h-1.5 w-1.5 rounded-full bg-white/85" />
@@ -331,10 +349,6 @@ export default function CameraScreen({
             Live
           </span>
         </div>
-        <h1 className="truncate text-center text-[12px] font-medium tracking-tight text-white/80">
-          {eventName}
-        </h1>
-        <span className="w-[88px]" aria-hidden />
       </header>
 
       <div className="flex-1" />
@@ -589,6 +603,25 @@ function CaptureButton({
         className="h-[58px] w-[58px] rounded-full bg-white/95"
         aria-hidden
       />
+    </button>
+  );
+}
+
+function ExitButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Exit camera"
+      className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-md transition active:opacity-70"
+      style={{
+        borderWidth: "0.5px",
+        transitionDuration: "150ms",
+        transitionTimingFunction: EASE,
+        WebkitBackdropFilter: "blur(10px)",
+      }}
+    >
+      <ChevronIcon direction="left" className="h-4 w-4 text-white/75" />
     </button>
   );
 }

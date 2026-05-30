@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getEventBySlug } from "@/lib/queries/events";
 import GuestEntry from "./guest-entry";
@@ -72,6 +73,17 @@ export default async function EventLandingPage({
       </section>
 
       <GuestEntry eventSlug={event.slug} />
+
+      <div className="-mt-3 px-5 pb-7 text-center">
+        <div className="w-[330px] mx-auto h-[1px] bg-white/10"></div>
+
+        <Link
+          href="/"
+          className="text-[11px] font-medium uppercase tracking-[0.24em] text-white/25 transition active:opacity-60"
+        >
+          Create your own
+        </Link>
+      </div>
     </main>
   );
 }

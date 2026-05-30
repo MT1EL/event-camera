@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import SegmentedControl from "@/components/segmented-control";
 import Spinner from "@/components/Spinner";
 import { getOrCreateGuestSession } from "@/lib/guest-session";
@@ -28,9 +29,18 @@ export default function GalleryView({
   eventSlug: string;
   eventName: string;
 }) {
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>("mine");
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [photos, setPhotos] = useState<PhotoRow[] | null>(null); // null = loading
+
+  // Organizers return to manage, guests back to the camera to keep shooting.
+  const handleClose = useCallback(() => {
+    const slug = encodeURIComponent(eventSlug);
+    router.push(
+      identity?.uploaderId ? `/event/${slug}/manage` : `/event/${slug}/camera`,
+    );
+  }, [identity, eventSlug, router]);
 
   // Load identity + all event photos from the DB (the source of truth, so
   // "My Photos" survives reloads), and stay live via a realtime subscription.
@@ -103,8 +113,9 @@ export default function GalleryView({
     >
       <header className="px-5 pt-5">
         <div className="flex items-center justify-between">
-          <Link
-            href={`/event/${encodeURIComponent(eventSlug)}/camera`}
+          <button
+            type="button"
+            onClick={handleClose}
             aria-label="Close gallery"
             className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-md transition active:opacity-75"
             style={{
@@ -126,7 +137,7 @@ export default function GalleryView({
             >
               <path d="M6 6l12 12M18 6L6 18" />
             </svg>
-          </Link>
+          </button>
           <span className="text-[10px] font-medium uppercase tracking-[0.32em] text-white/45">
             Gallery
           </span>
@@ -161,7 +172,11 @@ export default function GalleryView({
         </div>
 
         <div className="mt-6">
-          <SegmentedControl options={TAB_OPTIONS} value={tab} onChange={setTab} />
+          <SegmentedControl
+            options={TAB_OPTIONS}
+            value={tab}
+            onChange={setTab}
+          />
         </div>
       </header>
 
@@ -187,10 +202,16 @@ export default function GalleryView({
   );
 }
 
-function PhotoTile({ photo, showName }: { photo: PhotoRow; showName: boolean }) {
+function PhotoTile({
+  photo,
+  showName,
+}: {
+  photo: PhotoRow;
+  showName: boolean;
+}) {
   return (
     <div
-      className="relative aspect-square overflow-hidden rounded-[10px] border border-white/[0.06] bg-[#121214]"
+      className="relative aspect-[2/3] overflow-hidden rounded-[10px] border border-white/[0.06] bg-[#121214]"
       style={{
         borderWidth: "0.5px",
         backgroundImage: `url(${publicPhotoUrl(photo.storage_path)})`,

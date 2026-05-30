@@ -188,7 +188,7 @@ export default function AlbumView({
             {photos.map((p) => (
               <li key={p.id}>
                 <div
-                  className="relative aspect-square overflow-hidden rounded-2xl border border-white/[0.06] bg-[#121214]"
+                  className="relative aspect-[2/3] overflow-hidden rounded-2xl border border-white/[0.06] bg-[#121214]"
                   style={{ borderWidth: "0.5px" }}
                   aria-label={`Moment ${p.index} · ${p.participant}`}
                 >

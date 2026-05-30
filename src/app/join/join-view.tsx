@@ -209,7 +209,7 @@ export default function JoinView() {
 
       <section className="flex flex-1 flex-col items-center justify-center px-6 pb-6 pt-8">
         <div
-          className="relative aspect-square w-full max-w-[280px] overflow-hidden rounded-3xl border border-white/10 bg-black"
+          className="relative aspect-[2/3] w-full max-w-[280px] overflow-hidden rounded-3xl border border-white/10 bg-black"
           style={{ borderWidth: "0.5px" }}
         >
           <video
