@@ -66,11 +66,19 @@ export default async function EventLandingPage({
               {event.name}
             </h1>
             <p className="max-w-xs text-base leading-relaxed text-white/55">
-              Capture moments from {event.name}
+              Take photos during the event and they will appear in a shared live
+              gallery.
+            </p>
+            <p className="max-w-xs text-[11px] font-light leading-relaxed text-white/40">
+              No account needed • Just join and start capturing moments
             </p>
           </div>
         </div>
       </section>
+
+      <p className="px-8 pb-5 text-center text-[12px] font-light leading-relaxed text-white/45">
+        📍 Scan, take photos, and see the night unfold together
+      </p>
 
       <GuestEntry eventSlug={event.slug} />
 

@@ -66,12 +66,12 @@ export default function Home() {
       <div className="px-5 pb-8 flex flex-col gap-3">
         {/* SECONDARY — organizer auth */}
         <div className="flex gap-3">
-          <AuthButton
+          {/* <AuthButton
             provider="apple"
             loading={signingIn === "apple"}
             disabled={anyLoading}
             onClick={() => handleSignIn("apple")}
-          />
+          /> */}
           <AuthButton
             provider="google"
             loading={signingIn === "google"}
